@@ -74,6 +74,7 @@ class App {
   #mapZoomLevel = 15;
   #mapEvent;
   #workouts = [];
+  #editingWorkoutId = null;
 
   constructor() {
     this._getPosition();
@@ -124,7 +125,7 @@ class App {
   }
 
   _showForm(mapE) {
-    this.#mapEvent = mapE;
+    if (mapE) this.#mapEvent = mapE;
     form.classList.remove('hidden');
     inputDistance.focus();
   }
@@ -153,13 +154,59 @@ class App {
     const allPositive = (...inputs) => {
       return inputs.every(inp => inp > 0);
     };
-
     e.preventDefault();
 
     // Get the data from form
     const type = inputType.value;
     const distance = +inputDistance.value;
     const duration = +inputDuration.value;
+
+    if (this.#editingWorkoutId) {
+      const workout = this.#workouts.find(w => w.id === this.#editingWorkoutId);
+
+      if (type === 'running') {
+        const cadence = +inputCadence.value;
+        if (
+          !validInputs(distance, duration, cadence) ||
+          !allPositive(distance, duration, cadence)
+        )
+          return alert('Inputs have to be positive numbers!');
+
+        workout.distance = distance;
+        workout.duration = duration;
+        workout.cadence = cadence;
+
+        console.log(workout);
+
+        // workout.calcPace();
+      }
+
+      if (type === 'cycling') {
+        const elevation = +inputElevation.value;
+        if (
+          !validInputs(distance, duration, elevation) ||
+          !allPositive(distance, duration)
+        )
+          return alert('Inputs have to be positive numbers!');
+
+        workout.distance = distance;
+        workout.duration = duration;
+        workout.elevationGain = elevation;
+        // workout.calcSpeed();
+      }
+
+      const oldEl = document.querySelector(`.workout[data-id="${workout.id}"]`);
+      if (oldEl) oldEl.remove();
+      this._renderWorkout(workout);
+
+      this.#editingWorkoutId = null;
+      inputType.disabled = false;
+      this._hideForm();
+      this._setLocalStorage();
+
+      return;
+    }
+
     const { lat, lng } = this.#mapEvent.latlng;
     let workout;
 
@@ -168,9 +215,6 @@ class App {
       const cadence = +inputCadence.value;
       // Check if data is valid
       if (
-        // !Number.isFinite(distance) ||
-        // !Number.isFinite(duration) ||
-        // !Number.isFinite(cadence)
         !validInputs(distance, duration, cadence) ||
         !allPositive(distance, duration, cadence)
       )
@@ -229,7 +273,13 @@ class App {
   _renderWorkout(workout) {
     let html = `
       <li class="workout workout--${workout.type}" data-id="${workout.id}">
-        <h2 class="workout__title">${workout.description}</h2>
+        <div class="description-title">
+          <h2 class="workout__title">${workout.description}</h2>
+          <div class="workout-btns">
+            <button class="edit-btn" >Edit</button>
+            <button class="delete-btn">Delete</button>
+          </div>
+        </div>
         <div class="workout__details">
           <span class="workout__icon">${workout.type === 'running' ? '🏃‍♂️' : '🚴🏻'}</span>
           <span class="workout__value">${workout.distance}</span>
@@ -281,6 +331,18 @@ class App {
     const workout = this.#workouts.find(
       work => work.id === workoutEl.dataset.id,
     );
+
+    if (e.target.closest('.edit-btn')) {
+      this._showForm();
+      inputType.value = workout.type;
+      inputDistance.value = workout.distance;
+      inputDuration.value = workout.duration;
+
+      if (workout.type === 'running') inputCadence.value = workout.cadence;
+      else inputElevation.value = workout.elevationGain;
+      this.#editingWorkoutId = workout.id;
+      inputType.disabled = true;
+    }
 
     this.#map.setView(workout.coords, this.#mapZoomLevel, {
       animate: true,
