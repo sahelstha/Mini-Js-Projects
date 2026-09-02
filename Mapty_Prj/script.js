@@ -119,7 +119,7 @@ class App {
 
         console.log(workout);
 
-        // workout.calcPace();
+        workout.calcPace();
       }
 
       if (type === 'cycling') {
@@ -133,7 +133,7 @@ class App {
         workout.distance = distance;
         workout.duration = duration;
         workout.elevationGain = elevation;
-        // workout.calcSpeed();
+        workout.calcSpeed();
       }
 
       const oldEl = document.querySelector(`.workout[data-id="${workout.id}"]`);
@@ -292,7 +292,7 @@ class App {
       },
     });
 
-    // workout.click();
+    workout.click();
   }
 
   _setLocalStorage() {
@@ -304,7 +304,37 @@ class App {
 
     if (!data) return;
 
-    this.#workouts = data;
+    const newData = data.map(workout => {
+      if (workout.type === 'running') {
+        let newRunning = new Running(
+          workout.coords,
+          workout.distance,
+          workout.duration,
+          workout.cadence,
+        );
+
+        newRunning.id = workout.id;
+        newRunning.date = new Date(workout.date);
+
+        return newRunning;
+      }
+
+      if (workout.type === 'cycling') {
+        let newRunning = new Cycling(
+          workout.coords,
+          workout.distance,
+          workout.duration,
+          workout.elevationGain,
+        );
+
+        newRunning.id = workout.id;
+        newRunning.date = new Date(workout.date);
+
+        return newRunning;
+      }
+    });
+
+    this.#workouts = newData;
     this.#workouts.forEach(workout => {
       this._renderWorkout(workout);
     });

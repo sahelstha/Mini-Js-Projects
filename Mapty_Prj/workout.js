@@ -19,6 +19,7 @@ export class Workout {
 
   click() {
     this.clicks++;
+    // console.log(this.clicks);
   }
 }
 
