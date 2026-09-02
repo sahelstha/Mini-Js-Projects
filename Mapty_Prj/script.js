@@ -18,6 +18,7 @@ class App {
   #workouts = [];
   #editingWorkoutId = null;
   #workoutMarkers = new Map();
+  #sortAcc = false;
 
   constructor() {
     this._getPosition();
@@ -379,6 +380,20 @@ class App {
     if (e.target.closest('.delete-fn')) {
       this.reset();
     }
+
+    if (e.target.closest('.sort-fn')) {
+      this.#workouts.sort((a, b) =>
+        this.#sortAcc ? a.distance - b.distance : b.distance - a.distance,
+      );
+      this.#sortAcc = !this.#sortAcc;
+      this._setLocalStorage();
+      this._renderAllWorkouts();
+    }
+  }
+
+  _renderAllWorkouts() {
+    containerWorkouts.querySelectorAll('.workout').forEach(el => el.remove());
+    this.#workouts.forEach(workout => this._renderWorkout(workout));
   }
 }
 
