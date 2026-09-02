@@ -9,6 +9,7 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
+const filters = document.querySelector('.functionality');
 
 class App {
   #map;
@@ -29,6 +30,8 @@ class App {
     inputType.addEventListener('change', this._toggleElevationField);
 
     containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
+
+    filters.addEventListener('click', this._filterBtnEvent.bind(this));
   }
 
   _getPosition() {
@@ -192,6 +195,8 @@ class App {
 
     // Set local storage to all workouts
     this._setLocalStorage();
+
+    // Add event to delete all function
   }
 
   _renderWorkoutMarker(workout) {
@@ -215,6 +220,10 @@ class App {
   }
 
   _renderWorkout(workout) {
+    if (this.#workouts.length !== 0) {
+      filters.classList.remove('hidden');
+    }
+
     let html = `
       <li class="workout workout--${workout.type}" data-id="${workout.id}">
         <div class="description-title">
@@ -264,7 +273,7 @@ class App {
           </div>
         </li>`;
 
-    form.insertAdjacentHTML('afterend', html);
+    filters.insertAdjacentHTML('afterend', html);
   }
 
   _moveToPopup(e) {
@@ -295,10 +304,14 @@ class App {
       this.#workouts.splice(index, 1);
       this._setLocalStorage();
       // this._getLocalStorage();
+      if (this.#workouts.length === 0) {
+        filters.classList.add('hidden');
+      }
 
       const marker = this.#workoutMarkers.get(workout.id);
       if (marker) this.#map.removeLayer(marker);
       this.#workoutMarkers.delete(workout.id);
+
       return;
     }
 
@@ -360,6 +373,12 @@ class App {
   reset() {
     localStorage.removeItem('workouts');
     location.reload();
+  }
+
+  _filterBtnEvent(e) {
+    if (e.target.closest('.delete-fn')) {
+      this.reset();
+    }
   }
 }
 

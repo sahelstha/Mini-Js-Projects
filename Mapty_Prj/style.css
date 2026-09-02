@@ -138,6 +138,14 @@ a:visited {
   opacity: 0;
 }
 
+.hidden {
+  transform: translateY(-30rem);
+  height: 0;
+  padding: 0 2.25rem;
+  margin-bottom: 0;
+  opacity: 0;
+}
+
 .form__row {
   display: flex;
   align-items: center;
@@ -240,6 +248,8 @@ a:visited {
   width: 6rem;
   border: 0.5px solid;
   border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
 }
 
 .delete-btn {
@@ -249,4 +259,33 @@ a:visited {
   width: 6rem;
   border: 0.5px solid;
   border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.delete-btn-all {
+  background-color: #fa4f4f;
+  color: white;
+  padding: 8px 18px;
+  border: 0.5px solid;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.sort-btn {
+  background-color: #7d7df6;
+  color: white;
+  padding: 8px 18px;
+  border: 0.5px solid;
+  border-radius: 5px;
+  margin-right: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.functionality {
+  display: flex;
+  flex-direction: row-reverse;
+  margin-bottom: 16px;
 }
