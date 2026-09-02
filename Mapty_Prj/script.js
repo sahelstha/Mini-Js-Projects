@@ -16,6 +16,7 @@ class App {
   #mapEvent;
   #workouts = [];
   #editingWorkoutId = null;
+  #workoutMarkers = new Map();
 
   constructor() {
     this._getPosition();
@@ -194,7 +195,7 @@ class App {
   }
 
   _renderWorkoutMarker(workout) {
-    L.marker(workout.coords)
+    const market = L.marker(workout.coords)
       .addTo(this.#map)
       .bindPopup(
         L.popup({
@@ -209,6 +210,8 @@ class App {
         `${workout.type === 'running' ? '🏃‍♂️' : '🚴🏻'} ${workout.description}`,
       )
       .openPopup();
+
+    this.#workoutMarkers.set(workout.id, market);
   }
 
   _renderWorkout(workout) {
@@ -285,6 +288,20 @@ class App {
       inputType.disabled = true;
     }
 
+    if (e.target.closest('.delete-btn')) {
+      workoutEl.remove();
+      const index = this.#workouts.findIndex(w => w.id === workout.id);
+
+      this.#workouts.splice(index, 1);
+      this._setLocalStorage();
+      // this._getLocalStorage();
+
+      const marker = this.#workoutMarkers.get(workout.id);
+      if (marker) this.#map.removeLayer(marker);
+      this.#workoutMarkers.delete(workout.id);
+      return;
+    }
+
     this.#map.setView(workout.coords, this.#mapZoomLevel, {
       animate: true,
       pan: {
@@ -340,10 +357,10 @@ class App {
     });
   }
 
-  // reset() {
-  //   localStorage.removeItem('workouts');
-  //   location.reload();
-  // }
+  reset() {
+    localStorage.removeItem('workouts');
+    location.reload();
+  }
 }
 
 const app = new App();
