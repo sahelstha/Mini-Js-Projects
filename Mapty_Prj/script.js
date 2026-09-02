@@ -10,6 +10,8 @@ const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 const filters = document.querySelector('.functionality');
+const formError = document.querySelector('.form__error');
+const toastContainer = document.querySelector('.toast-container');
 
 class App {
   #map;
@@ -94,12 +96,6 @@ class App {
   }
 
   _newWorkout(e) {
-    const validInputs = (...inputs) => {
-      return inputs.every(inp => Number.isFinite(inp));
-    };
-    const allPositive = (...inputs) => {
-      return inputs.every(inp => inp > 0);
-    };
     e.preventDefault();
 
     // Get the data from form
@@ -110,30 +106,26 @@ class App {
     if (this.#editingWorkoutId) {
       const workout = this.#workouts.find(w => w.id === this.#editingWorkoutId);
 
+      if (!Number.isFinite(distance) || distance <= 0)
+        return this._showError('Distance must be a positive number.');
+      if (!Number.isFinite(duration) || duration <= 0)
+        return this._showError('Duration must be a positive number.');
+
       if (type === 'running') {
         const cadence = +inputCadence.value;
-        if (
-          !validInputs(distance, duration, cadence) ||
-          !allPositive(distance, duration, cadence)
-        )
-          return alert('Inputs have to be positive numbers!');
+        if (!Number.isFinite(cadence) || cadence <= 0)
+          return this._showError('Cadence must be a positive number.');
 
         workout.distance = distance;
         workout.duration = duration;
         workout.cadence = cadence;
-
-        console.log(workout);
-
         workout.calcPace();
       }
 
       if (type === 'cycling') {
         const elevation = +inputElevation.value;
-        if (
-          !validInputs(distance, duration, elevation) ||
-          !allPositive(distance, duration)
-        )
-          return alert('Inputs have to be positive numbers!');
+        if (!Number.isFinite(elevation) || elevation <= 0)
+          return this._showError('Elevation must be a positive number.');
 
         workout.distance = distance;
         workout.duration = duration;
@@ -148,6 +140,7 @@ class App {
       this.#editingWorkoutId = null;
       inputType.disabled = false;
       this._hideForm();
+      this._clearError();
       this._setLocalStorage();
 
       return;
@@ -156,28 +149,25 @@ class App {
     const { lat, lng } = this.#mapEvent.latlng;
     let workout;
 
+    if (!Number.isFinite(distance) || distance <= 0)
+      return this._showError('Distance must be a positive number.');
+    if (!Number.isFinite(duration) || duration <= 0)
+      return this._showError('Duration must be a positive number.');
+
     // If workout running, create running object
     if (type === 'running') {
       const cadence = +inputCadence.value;
-      // Check if data is valid
-      if (
-        !validInputs(distance, duration, cadence) ||
-        !allPositive(distance, duration, cadence)
-      )
-        return alert('Inputs have to be positive numbers!');
+      if (!Number.isFinite(cadence) || cadence <= 0)
+        return this._showError('Cadence must be a positive number.');
 
       workout = new Running([lat, lng], distance, duration, cadence);
     }
 
     // If workout cycling, create cycling object
     if (type === 'cycling') {
-      // Check if data is valid
       const elevation = +inputElevation.value;
-      if (
-        !validInputs(distance, duration, elevation) ||
-        !allPositive(distance, duration)
-      )
-        return alert('Inputs have to be positive numbers!');
+      if (!Number.isFinite(elevation) || elevation <= 0)
+        return this._showError('Elevation must be a positive number.');
 
       workout = new Cycling([lat, lng], distance, duration, elevation);
     }
@@ -193,11 +183,10 @@ class App {
 
     // Hide form + clear input fileds
     this._hideForm();
+    this._clearError();
 
     // Set local storage to all workouts
     this._setLocalStorage();
-
-    // Add event to delete all function
   }
 
   _renderWorkoutMarker(workout) {
@@ -304,7 +293,7 @@ class App {
 
       this.#workouts.splice(index, 1);
       this._setLocalStorage();
-      // this._getLocalStorage();
+
       if (this.#workouts.length === 0) {
         filters.classList.add('hidden');
       }
@@ -312,6 +301,8 @@ class App {
       const marker = this.#workoutMarkers.get(workout.id);
       if (marker) this.#map.removeLayer(marker);
       this.#workoutMarkers.delete(workout.id);
+
+      this._showToast(`Deleted "${workout.description}"`);
 
       return;
     }
@@ -372,6 +363,9 @@ class App {
   }
 
   reset() {
+    const confirmed = confirm('Delete all workouts? This cannot be undone.');
+    if (!confirmed) return;
+
     localStorage.removeItem('workouts');
     location.reload();
   }
@@ -394,6 +388,33 @@ class App {
   _renderAllWorkouts() {
     containerWorkouts.querySelectorAll('.workout').forEach(el => el.remove());
     this.#workouts.forEach(workout => this._renderWorkout(workout));
+  }
+
+  _showError(message) {
+    formError.textContent = message;
+    formError.classList.remove('hidden');
+  }
+
+  _clearError() {
+    formError.classList.add('hidden');
+    formError.textContent = '';
+  }
+
+  _showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+
+    // trigger transition (needs a tick so the browser registers the initial state first)
+    requestAnimationFrame(() => toast.classList.add('toast--visible'));
+
+    setTimeout(() => {
+      toast.classList.remove('toast--visible');
+      toast.addEventListener('transitionend', () => toast.remove(), {
+        once: true,
+      });
+    }, 3000);
   }
 }
 
